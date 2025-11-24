@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Assignment_React_Native",
-    "slug": "Assignment_React_Native",
+    "name": "FitHub",
+    "slug": "fithub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

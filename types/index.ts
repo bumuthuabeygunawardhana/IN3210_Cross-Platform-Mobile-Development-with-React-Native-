@@ -22,6 +22,7 @@ export interface Exercise {
   equipment: string;
   difficulty: string;
   instructions: string;
+  image?: string; // Optional image URL
 }
 
 export interface ExerciseState {

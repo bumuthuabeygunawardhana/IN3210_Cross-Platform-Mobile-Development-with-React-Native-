@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeState } from '../../types';
 
-const THEME_KEY = '@fitbuddy_theme';
+const THEME_KEY = '@fithub_theme';
 
 const initialState: ThemeState = {
   isDark: false,

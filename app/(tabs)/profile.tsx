@@ -199,7 +199,7 @@ export default function ProfileScreen() {
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            Made with ❤️ for fitness enthusiasts
+            Made with React native application for fitness enthusiasts
           </Text>
         </View>
       </ScrollView>

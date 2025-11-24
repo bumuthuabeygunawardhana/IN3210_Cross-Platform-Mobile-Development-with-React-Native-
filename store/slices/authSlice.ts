@@ -17,8 +17,8 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(email, password);
-      await AsyncStorage.setItem('token', response.token);
-      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      await AsyncStorage.setItem('@fithub_token', response.token);
+      await AsyncStorage.setItem('@fithub_user', JSON.stringify(response.user));
       return response;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Login failed');
@@ -31,8 +31,8 @@ export const registerUser = createAsyncThunk(
   async ({ name, email, password }: { name: string; email: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await authAPI.register(name, email, password);
-      await AsyncStorage.setItem('token', response.token);
-      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      await AsyncStorage.setItem('@fithub_token', response.token);
+      await AsyncStorage.setItem('@fithub_user', JSON.stringify(response.user));
       return response;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Registration failed');
@@ -44,8 +44,8 @@ export const loadStoredAuth = createAsyncThunk(
   'auth/loadStored',
   async (_, { rejectWithValue }) => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const userStr = await AsyncStorage.getItem('user');
+      const token = await AsyncStorage.getItem('@fithub_token');
+      const userStr = await AsyncStorage.getItem('@fithub_user');
       
       if (token && userStr) {
         const user = JSON.parse(userStr);
@@ -61,8 +61,8 @@ export const loadStoredAuth = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem('@fithub_token');
+    await AsyncStorage.removeItem('@fithub_user');
   }
 );
 
