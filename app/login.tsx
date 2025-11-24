@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { loginUser, clearError } from '@/store/slices/authSlice';
+import { FitHubLogo } from '@/components/FitHubLogo';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 
@@ -61,11 +62,7 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Feather name="activity" size={64} color={colors.primary} />
-          <Text style={[styles.title, { color: colors.text }]}>FitBuddy</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Track your fitness journey
-          </Text>
+          <FitHubLogo />
         </View>
 
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>
