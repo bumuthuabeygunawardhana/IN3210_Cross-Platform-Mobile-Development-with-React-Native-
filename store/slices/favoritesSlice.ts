@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FavoritesState, Exercise } from '../../types';
 
-const FAVORITES_KEY = '@fitbuddy_favorites';
+const FAVORITES_KEY = '@fithub_favorites';
 
 const initialState: FavoritesState = {
   favorites: [],

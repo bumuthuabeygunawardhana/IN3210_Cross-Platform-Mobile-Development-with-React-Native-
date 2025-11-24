@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { registerUser, clearError } from '@/store/slices/authSlice';
+import { FitHubLogo } from '@/components/FitHubLogo';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 
@@ -69,11 +70,7 @@ export default function RegisterScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Feather name="arrow-left" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Feather name="activity" size={64} color={colors.primary} />
-          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Join FitBuddy today
-          </Text>
+          <FitHubLogo />
         </View>
 
         <View style={[styles.formCard, { backgroundColor: colors.card }]}>

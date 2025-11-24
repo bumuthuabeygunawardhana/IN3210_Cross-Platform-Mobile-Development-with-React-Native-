@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -97,10 +98,24 @@ export default function ExerciseDetailsScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.heroCard, { backgroundColor: colors.primary }]}>
-          <Feather name={getMuscleIcon(exercise.muscle)} size={64} color="#FFFFFF" />
-          <Text style={styles.heroTitle}>{exercise.name}</Text>
-        </View>
+        {exercise.image ? (
+          <View style={styles.heroImage}>
+            <Image 
+              source={{ uri: exercise.image }} 
+              style={styles.exerciseImage}
+              resizeMode="cover"
+            />
+            <View style={styles.heroOverlay}>
+              <Feather name={getMuscleIcon(exercise.muscle)} size={48} color="#FFFFFF" />
+              <Text style={styles.heroTitle}>{exercise.name}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.heroCard, { backgroundColor: colors.primary }]}>
+            <Feather name={getMuscleIcon(exercise.muscle)} size={64} color="#FFFFFF" />
+            <Text style={styles.heroTitle}>{exercise.name}</Text>
+          </View>
+        )}
 
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Details</Text>
@@ -147,16 +162,23 @@ export default function ExerciseDetailsScreen() {
           <View style={styles.instructionHeader}>
             <Feather name="book-open" size={24} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
-              Instructions
+              Full Description & Instructions
             </Text>
           </View>
-          <Text style={[styles.instructions, { color: colors.text }]}>
-            {exercise.instructions}
-          </Text>
+          <View style={[styles.descriptionBox, { backgroundColor: colors.background }]}>
+            <Text style={[styles.instructions, { color: colors.text }]}>
+              {exercise.instructions}
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recommendations</Text>
+          <View style={styles.recommendationHeader}>
+            <Feather name="award" size={24} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+              Training Recommendations
+            </Text>
+          </View>
           <View style={styles.recommendation}>
             <Feather name="check-circle" size={20} color={colors.primary} />
             <Text style={[styles.recommendationText, { color: colors.text }]}>
@@ -210,6 +232,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  heroImage: {
+    width: '100%',
+    height: 300,
+    position: 'relative',
+  },
+  exerciseImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
   heroCard: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -223,6 +261,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginTop: 16,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   card: {
     margin: 16,
@@ -265,9 +306,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  descriptionBox: {
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
   instructions: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 26,
+  },
+  recommendationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   recommendation: {
     flexDirection: 'row',

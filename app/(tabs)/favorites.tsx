@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -62,15 +63,32 @@ export default function FavoritesScreen() {
       onPress={() => handleExercisePress(item)}
       activeOpacity={0.7}
     >
-      <View style={[styles.cardHeader, { backgroundColor: colors.primary + '20' }]}>
-        <Feather name="activity" size={40} color={colors.primary} />
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={() => handleRemoveFavorite(item)}
-        >
-          <Feather name="heart" size={24} color="#F44336" fill="#F44336" />
-        </TouchableOpacity>
-      </View>
+      {item.image ? (
+        <View style={styles.cardImageContainer}>
+          <Image 
+            source={{ uri: item.image }} 
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+          <View style={styles.imageOverlay} />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => handleRemoveFavorite(item)}
+          >
+            <Feather name="heart" size={24} color="#F44336" fill="#F44336" />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={[styles.cardHeader, { backgroundColor: colors.primary + '20' }]}>
+          <Feather name="activity" size={40} color={colors.primary} />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => handleRemoveFavorite(item)}
+          >
+            <Feather name="heart" size={24} color="#F44336" fill="#F44336" />
+          </TouchableOpacity>
+        </View>
+      )}
       
       <View style={styles.cardContent}>
         <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>
@@ -186,6 +204,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  cardImageContainer: {
+    width: '100%',
+    height: 200,
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   cardHeader: {
     alignItems: 'center',

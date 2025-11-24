@@ -9,11 +9,13 @@ import {
   RefreshControl,
   TextInput,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchExercises } from '@/store/slices/exerciseSlice';
+import { toggleFavorite, saveFavorites } from '@/store/slices/favoritesSlice';
 import { Exercise } from '@/types';
 
 const { width } = Dimensions.get('window');
@@ -28,6 +30,8 @@ export default function HomeScreen() {
   const favorites = useAppSelector((state) => state.favorites.favorites);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState('');
+  const [waterIntake, setWaterIntake] = useState(0);
+  const waterGoal = 8; // 8 glasses per day
 
   const colors = {
     background: isDark ? '#121212' : '#F5F5F5',
@@ -77,25 +81,65 @@ export default function HomeScreen() {
     return favorites.some(fav => fav.name === exerciseName);
   };
 
+  const handleToggleFavorite = async (exercise: Exercise, event: any) => {
+    event.stopPropagation(); // Prevent card press when clicking favorite
+    dispatch(toggleFavorite(exercise));
+    const isFav = isFavorite(exercise.name);
+    const updatedFavorites = isFav 
+      ? favorites.filter(fav => fav.name !== exercise.name)
+      : [...favorites, exercise];
+    await dispatch(saveFavorites(updatedFavorites));
+  };
+
   const renderExerciseCard = ({ item }: { item: Exercise }) => (
     <TouchableOpacity
       style={[styles.exerciseCard, { backgroundColor: colors.card }]}
       onPress={() => handleExercisePress(item)}
       activeOpacity={0.7}
     >
-      <View style={[styles.cardHeader, { backgroundColor: colors.primary + '20' }]}>
-        <Feather name="activity" size={40} color={colors.primary} />
-      </View>
+      {item.image ? (
+        <View style={styles.cardImageContainer}>
+          <Image 
+            source={{ uri: item.image }} 
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+          <View style={styles.imageOverlay} />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={(e) => handleToggleFavorite(item, e)}
+            activeOpacity={0.7}
+          >
+            <Feather 
+              name="heart" 
+              size={24} 
+              color={isFavorite(item.name) ? '#F44336' : '#FFFFFF'}
+              fill={isFavorite(item.name) ? '#F44336' : 'none'}
+            />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={[styles.cardHeader, { backgroundColor: colors.primary + '20' }]}>
+          <Feather name="activity" size={40} color={colors.primary} />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={(e) => handleToggleFavorite(item, e)}
+            activeOpacity={0.7}
+          >
+            <Feather 
+              name="heart" 
+              size={24} 
+              color={isFavorite(item.name) ? '#F44336' : colors.textSecondary}
+              fill={isFavorite(item.name) ? '#F44336' : 'none'}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
       
       <View style={styles.cardContent}>
-        <View style={styles.cardTitleRow}>
-          <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>
-            {item.name}
-          </Text>
-          {isFavorite(item.name) && (
-            <Feather name="heart" size={20} color="#F44336" fill="#F44336" />
-          )}
-        </View>
+        <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>
+          {item.name}
+        </Text>
 
         <View style={styles.cardTags}>
           <View style={[styles.tag, { backgroundColor: colors.primary + '20' }]}>
@@ -113,9 +157,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={3}>
-          {item.instructions}
-        </Text>
+        <View style={[styles.descriptionContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.descriptionHeader}>
+            <Feather name="info" size={14} color={colors.primary} />
+            <Text style={[styles.descriptionLabel, { color: colors.primary }]}>
+              Description
+            </Text>
+          </View>
+          <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={3}>
+            {item.instructions}
+          </Text>
+          <Text style={[styles.readMore, { color: colors.primary }]}>
+            Tap to read more →
+          </Text>
+        </View>
 
         <View style={styles.cardFooter}>
           <View style={styles.footerItem}>
@@ -134,102 +189,191 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View>
-          <Text style={[styles.greeting, { color: colors.textSecondary }]}>Welcome back,</Text>
-          <Text style={[styles.username, { color: colors.text }]}>{user?.name || 'User'}</Text>
+          <Text style={[styles.greeting, { color: colors.textSecondary }]}>Welcome to FitHub</Text>
+          <Text style={[styles.username, { color: colors.text }]}>Hey, {user?.name || 'Athlete'}! 💪</Text>
         </View>
         <TouchableOpacity style={styles.headerIcon}>
           <Feather name="bell" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
-        <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
-          <Feather name="search" size={20} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search exercises..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Feather name="x" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Loading exercises...
+          </Text>
         </View>
+      ) : (
+        <FlatList
+          data={filteredExercises}
+          renderItem={renderExerciseCard}
+          keyExtractor={(item, index) => `${item.name}-${index}`}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              {/* Water Intake Section */}
+              <View style={[styles.waterCard, { backgroundColor: colors.card }]}>
+                <View style={styles.waterHeader}>
+                  <View style={styles.waterTitleRow}>
+                    <Feather name="droplet" size={24} color="#2196F3" />
+                    <Text style={[styles.waterTitle, { color: colors.text }]}>Daily Water Intake</Text>
+                  </View>
+                  <Text style={[styles.waterGoal, { color: colors.textSecondary }]}>
+                    {waterIntake} / {waterGoal} glasses
+                  </Text>
+                </View>
+                
+                <View style={styles.waterProgress}>
+                  <View style={styles.waterProgressBar}>
+                    <View 
+                      style={[
+                        styles.waterProgressFill, 
+                        { width: `${Math.min((waterIntake / waterGoal) * 100, 100)}%` }
+                      ]} 
+                    />
+                  </View>
+                </View>
 
-        <View style={styles.muscleFilters}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={muscles}
-            keyExtractor={(item) => item || 'all'}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.muscleChip,
-                  {
-                    backgroundColor: selectedMuscle === item ? colors.primary : colors.card,
-                  },
-                ]}
-                onPress={() => setSelectedMuscle(item)}
-              >
-                <Text
-                  style={[
-                    styles.muscleChipText,
-                    {
-                      color: selectedMuscle === item ? '#FFFFFF' : colors.text,
-                    },
-                  ]}
-                >
-                  {item || 'All'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+                <View style={styles.waterButtons}>
+                  <TouchableOpacity 
+                    style={[styles.waterButton, { backgroundColor: '#2196F3' }]}
+                    onPress={() => setWaterIntake(Math.max(0, waterIntake - 1))}
+                    disabled={waterIntake === 0}
+                  >
+                    <Feather name="minus" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.waterButton, { backgroundColor: '#2196F3' }]}
+                    onPress={() => setWaterIntake(Math.min(waterGoal, waterIntake + 1))}
+                    disabled={waterIntake >= waterGoal}
+                  >
+                    <Feather name="plus" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Loading exercises...
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredExercises}
-            renderItem={renderExerciseCard}
-            keyExtractor={(item, index) => `${item.name}-${index}`}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={loading}
-                onRefresh={loadExercises}
-                tintColor={colors.primary}
-              />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Feather name="inbox" size={64} color={colors.textSecondary} />
-                <Text style={[styles.emptyText, { color: colors.text }]}>
-                  No exercises found
-                </Text>
-                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-                  Try adjusting your search or filters
-                </Text>
+                {waterIntake >= waterGoal && (
+                  <View style={styles.waterAchievement}>
+                    <Feather name="check-circle" size={16} color="#4CAF50" />
+                    <Text style={[styles.waterAchievementText, { color: '#4CAF50' }]}>
+                      Great job! Goal achieved! 🎉
+                    </Text>
+                  </View>
+                )}
               </View>
-            }
-          />
-        )}
-      </View>
+
+              {/* Wellness Tips Section */}
+              <View style={[styles.tipsCard, { backgroundColor: colors.card }]}>
+                <View style={styles.tipsHeader}>
+                  <Feather name="heart" size={24} color="#FF6B6B" />
+                  <Text style={[styles.tipsTitle, { color: colors.text }]}>Wellness Tips</Text>
+                </View>
+                
+                <View style={styles.tipsList}>
+                  <View style={styles.tipItem}>
+                    <Feather name="sun" size={18} color="#FFA726" />
+                    <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+                      Get 7-9 hours of quality sleep each night
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.tipItem}>
+                    <Feather name="activity" size={18} color="#4CAF50" />
+                    <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+                      Stay active with at least 30 minutes of exercise daily
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.tipItem}>
+                    <Feather name="coffee" size={18} color="#8B4513" />
+                    <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+                      Eat balanced meals with protein, carbs, and healthy fats
+                    </Text>
+                  </View>
+
+                  <View style={styles.tipItem}>
+                    <Feather name="smile" size={18} color="#FF6B6B" />
+                    <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+                      Take breaks to stretch and relax your mind
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Search and Filters */}
+              <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
+                <Feather name="search" size={20} color={colors.textSecondary} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Search exercises..."
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Feather name="x" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.muscleFilters}>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={muscles}
+                  keyExtractor={(item) => item || 'all'}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[
+                        styles.muscleChip,
+                        {
+                          backgroundColor: selectedMuscle === item ? colors.primary : colors.card,
+                        },
+                      ]}
+                      onPress={() => setSelectedMuscle(item)}
+                    >
+                      <Text
+                        style={[
+                          styles.muscleChipText,
+                          {
+                            color: selectedMuscle === item ? '#FFFFFF' : colors.text,
+                          },
+                        ]}
+                      >
+                        {item || 'All'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            </>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={loadExercises}
+              tintColor={colors.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Feather name="inbox" size={64} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>
+                No exercises found
+              </Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                Try adjusting your search or filters
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
-}
-
-const styles = StyleSheet.create({
+}const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -266,6 +410,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
+    marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 12,
   },
@@ -276,6 +421,7 @@ const styles = StyleSheet.create({
   },
   muscleFilters: {
     marginVertical: 8,
+    paddingHorizontal: 16,
   },
   muscleChip: {
     paddingHorizontal: 16,
@@ -302,20 +448,45 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  cardImageContainer: {
+    width: '100%',
+    height: 200,
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
   cardHeader: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    position: 'relative',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardContent: {
     padding: 16,
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
+
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -340,10 +511,31 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     textTransform: 'capitalize',
   },
+  descriptionContainer: {
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  descriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  descriptionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   cardDescription: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 12,
+  },
+  readMore: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -382,5 +574,113 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     marginTop: 8,
+  },
+  // Water Intake Styles
+  waterCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  waterHeader: {
+    marginBottom: 16,
+  },
+  waterTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  waterTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  waterGoal: {
+    fontSize: 14,
+  },
+  waterProgress: {
+    marginBottom: 16,
+  },
+  waterProgressBar: {
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  waterProgressFill: {
+    height: '100%',
+    backgroundColor: '#2196F3',
+    borderRadius: 6,
+  },
+  waterButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  waterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  waterAchievement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+  },
+  waterAchievementText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  // Wellness Tips Styles
+  tipsCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tipsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tipsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  tipsList: {
+    gap: 12,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
